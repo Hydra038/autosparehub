@@ -32,11 +32,11 @@ export default async function AdminPage() {
   const data = await getAdminData()
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <Link href="/admin/products/new" className="btn-primary">
+    <div className="container mx-auto px-4 py-4 md:py-8">
+      <div className="mb-6 md:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
+        <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full sm:w-auto">
+          <Link href="/admin/products/new" className="btn-primary text-sm md:text-base flex-1 sm:flex-none text-center">
             + Add Product
           </Link>
           <AdminLogoutButton />
@@ -44,48 +44,48 @@ export default async function AdminPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="mb-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border bg-white p-6">
-          <div className="mb-2 text-sm font-medium text-muted-foreground">
+      <div className="mb-6 md:mb-8 grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-lg border bg-white p-4 md:p-6">
+          <div className="mb-2 text-xs md:text-sm font-medium text-muted-foreground">
             Total Products
           </div>
-          <div className="text-3xl font-bold">{data.totalProducts}</div>
+          <div className="text-2xl md:text-3xl font-bold">{data.totalProducts}</div>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
-          <div className="mb-2 text-sm font-medium text-muted-foreground">
+        <div className="rounded-lg border bg-white p-4 md:p-6">
+          <div className="mb-2 text-xs md:text-sm font-medium text-muted-foreground">
             Total Orders
           </div>
-          <div className="text-3xl font-bold">{data.totalOrders}</div>
+          <div className="text-2xl md:text-3xl font-bold">{data.totalOrders}</div>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
-          <div className="mb-2 text-sm font-medium text-muted-foreground">
+        <div className="rounded-lg border bg-white p-4 md:p-6">
+          <div className="mb-2 text-xs md:text-sm font-medium text-muted-foreground">
             Total Revenue
           </div>
-          <div className="text-3xl font-bold text-green-600">
+          <div className="text-2xl md:text-3xl font-bold text-green-600">
             {formatPrice(data.revenue)}
           </div>
         </div>
 
-        <div className="rounded-lg border bg-white p-6">
-          <div className="mb-2 text-sm font-medium text-muted-foreground">
+        <div className="rounded-lg border bg-white p-4 md:p-6">
+          <div className="mb-2 text-xs md:text-sm font-medium text-muted-foreground">
             Pending Orders
           </div>
-          <div className="text-3xl font-bold text-orange-600">
+          <div className="text-2xl md:text-3xl font-bold text-orange-600">
             {data.recentOrders.filter((o) => o.status === 'pending').length}
           </div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="mb-8 grid gap-6 md:grid-cols-3 lg:grid-cols-4">
+      <div className="mb-6 md:mb-8 grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
         <Link
           href="/admin/products"
-          className="flex flex-col items-center gap-2 rounded-lg border p-6 transition-all hover:border-primary hover:shadow-md"
+          className="flex flex-col items-center gap-2 rounded-lg border p-4 md:p-6 transition-all hover:border-primary hover:shadow-md"
         >
           <svg
-            className="h-12 w-12 text-primary"
+            className="h-10 w-10 md:h-12 md:w-12 text-primary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -97,18 +97,18 @@ export default async function AdminPage() {
               d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
             />
           </svg>
-          <span className="font-semibold">Manage Products</span>
-          <span className="text-sm text-muted-foreground">
+          <span className="font-semibold text-sm md:text-base text-center">Manage Products</span>
+          <span className="text-xs md:text-sm text-muted-foreground text-center hidden sm:block">
             Add, edit, or remove products
           </span>
         </Link>
 
         <Link
           href="/admin/orders"
-          className="flex flex-col items-center gap-2 rounded-lg border p-6 transition-all hover:border-primary hover:shadow-md"
+          className="flex flex-col items-center gap-2 rounded-lg border p-4 md:p-6 transition-all hover:border-primary hover:shadow-md"
         >
           <svg
-            className="h-12 w-12 text-primary"
+            className="h-10 w-10 md:h-12 md:w-12 text-primary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -120,18 +120,18 @@ export default async function AdminPage() {
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <span className="font-semibold">Manage Orders</span>
-          <span className="text-sm text-muted-foreground">
+          <span className="font-semibold text-sm md:text-base text-center">Manage Orders</span>
+          <span className="text-xs md:text-sm text-muted-foreground text-center hidden sm:block">
             View and update order status
           </span>
         </Link>
 
         <Link
           href="/admin/inventory"
-          className="flex flex-col items-center gap-2 rounded-lg border p-6 transition-all hover:border-primary hover:shadow-md"
+          className="flex flex-col items-center gap-2 rounded-lg border p-4 md:p-6 transition-all hover:border-primary hover:shadow-md"
         >
           <svg
-            className="h-12 w-12 text-primary"
+            className="h-10 w-10 md:h-12 md:w-12 text-primary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -143,18 +143,18 @@ export default async function AdminPage() {
               d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
             />
           </svg>
-          <span className="font-semibold">Inventory Management</span>
-          <span className="text-sm text-muted-foreground">
+          <span className="font-semibold text-sm md:text-base text-center">Inventory</span>
+          <span className="text-xs md:text-sm text-muted-foreground text-center hidden sm:block">
             Track and update stock levels
           </span>
         </Link>
 
         <Link
           href="/admin/users"
-          className="flex flex-col items-center gap-2 rounded-lg border p-6 transition-all hover:border-primary hover:shadow-md"
+          className="flex flex-col items-center gap-2 rounded-lg border p-4 md:p-6 transition-all hover:border-primary hover:shadow-md"
         >
           <svg
-            className="h-12 w-12 text-primary"
+            className="h-10 w-10 md:h-12 md:w-12 text-primary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -166,18 +166,18 @@ export default async function AdminPage() {
               d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
             />
           </svg>
-          <span className="font-semibold">Manage Users</span>
-          <span className="text-sm text-muted-foreground">
+          <span className="font-semibold text-sm md:text-base text-center">Manage Users</span>
+          <span className="text-xs md:text-sm text-muted-foreground text-center hidden sm:block">
             View and manage user accounts
           </span>
         </Link>
 
         <Link
           href="/admin/payment-methods"
-          className="flex flex-col items-center gap-2 rounded-lg border p-6 transition-all hover:border-primary hover:shadow-md"
+          className="flex flex-col items-center gap-2 rounded-lg border p-4 md:p-6 transition-all hover:border-primary hover:shadow-md"
         >
           <svg
-            className="h-12 w-12 text-primary"
+            className="h-10 w-10 md:h-12 md:w-12 text-primary"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -189,8 +189,8 @@ export default async function AdminPage() {
               d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
             />
           </svg>
-          <span className="font-semibold">Payment Methods</span>
-          <span className="text-sm text-muted-foreground">
+          <span className="font-semibold text-sm md:text-base text-center">Payment</span>
+          <span className="text-xs md:text-sm text-muted-foreground text-center hidden sm:block">
             Configure payment options
           </span>
         </Link>
@@ -198,30 +198,30 @@ export default async function AdminPage() {
 
       {/* Recent Orders */}
       <div className="rounded-lg border bg-white">
-        <div className="border-b p-6">
+        <div className="border-b p-4 md:p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">Recent Orders</h2>
-            <Link href="/admin/orders" className="text-sm text-primary hover:underline">
+            <h2 className="text-lg md:text-xl font-bold">Recent Orders</h2>
+            <Link href="/admin/orders" className="text-xs md:text-sm text-primary hover:underline">
               View all →
             </Link>
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[640px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Order #</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Date</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Customer</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold">Total</th>
+                <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold">Order #</th>
+                <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold hidden sm:table-cell">Date</th>
+                <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold hidden md:table-cell">Customer</th>
+                <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold">Status</th>
+                <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {data.recentOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium">
+                  <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium">
                     <Link
                       href={`/admin/orders/${order.id}`}
                       className="text-primary hover:underline"
@@ -229,11 +229,11 @@ export default async function AdminPage() {
                       {order.order_number}
                     </Link>
                   </td>
-                  <td className="px-6 py-4 text-sm">
+                  <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm hidden sm:table-cell">
                     {new Date(order.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 text-sm">{order.shipping_email}</td>
-                  <td className="px-6 py-4 text-sm">
+                  <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm hidden md:table-cell truncate max-w-[150px]">{order.shipping_email}</td>
+                  <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm">
                     <span
                       className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                         order.status === 'delivered'
@@ -248,7 +248,7 @@ export default async function AdminPage() {
                       {order.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium">
+                  <td className="px-3 md:px-6 py-3 md:py-4 text-xs md:text-sm font-medium whitespace-nowrap">
                     {formatPrice(order.total_eur)}
                   </td>
                 </tr>
