@@ -1,0 +1,39 @@
+{
+  "name": "autospare-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-ready e-commerce platform for car spare parts",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "setup-admins": "tsx scripts/setup-admin-users.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.0.10",
+    "@supabase/supabase-js": "^2.39.3",
+    "next": "14.2.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "stripe": "^14.21.0",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/react": "^18.2.67",
+    "@types/react-dom": "^18.2.22",
+    "autoprefixer": "^10.4.19",
+    "dotenv": "^17.2.3",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.3",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.4.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
