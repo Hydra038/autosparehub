@@ -148,7 +148,7 @@ export default function SignInPage() {
           <p className="mb-6 text-center text-sm text-muted-foreground">
             {isSignUp
               ? 'Create an account to place orders and track them'
-              : 'Sign in to continue to checkout'}
+              : 'Welcome back! Sign in to your account'}
           </p>
 
           {error && (
