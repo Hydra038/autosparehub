@@ -72,10 +72,14 @@ export default function SignInPage() {
             console.error('Profile creation error:', profileError)
           }
 
+          // Wait for session to be established before redirecting
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
           // Redirect to dashboard or redirect URL
           const redirectTo = new URLSearchParams(window.location.search).get('redirect') || '/dashboard'
-          router.push(redirectTo)
-          router.refresh()
+          
+          // Use window.location for reliable redirect (especially on mobile)
+          window.location.href = redirectTo
         }
       } else {
         // Sign in with Supabase
@@ -119,8 +123,11 @@ export default function SignInPage() {
             redirectTo = '/dashboard'
           }
 
-          router.push(redirectTo)
-          router.refresh()
+          // Wait for session to be established before redirecting
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
+          // Use window.location for reliable redirect (especially on mobile)
+          window.location.href = redirectTo
         }
       }
     } catch (err) {
@@ -132,10 +139,10 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-16">
+    <div className="container mx-auto px-4 py-8 md:py-16">
       <div className="mx-auto max-w-md">
-        <div className="rounded-lg border bg-white p-8 shadow-lg">
-          <h1 className="mb-2 text-center text-3xl font-bold">
+        <div className="rounded-lg border bg-white p-6 md:p-8 shadow-lg">
+          <h1 className="mb-2 text-center text-2xl md:text-3xl font-bold">
             {isSignUp ? 'Create Account' : 'Sign In'}
           </h1>
           <p className="mb-6 text-center text-sm text-muted-foreground">
@@ -163,7 +170,7 @@ export default function SignInPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, full_name: e.target.value })
                   }
-                  className="input w-full"
+                  className="input w-full text-base"
                   placeholder="John Doe"
                 />
               </div>
@@ -180,8 +187,10 @@ export default function SignInPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
-                className="input w-full"
+                className="input w-full text-base"
                 placeholder="your@email.com"
+                autoCapitalize="none"
+                autoCorrect="off"
               />
             </div>
 
@@ -196,8 +205,10 @@ export default function SignInPage() {
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                className="input w-full"
+                className="input w-full text-base"
                 placeholder="••••••••"
+                autoCapitalize="none"
+                autoCorrect="off"
               />
             </div>
 
@@ -213,8 +224,10 @@ export default function SignInPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, confirmPassword: e.target.value })
                   }
-                  className="input w-full"
+                  className="input w-full text-base"
                   placeholder="••••••••"
+                  autoCapitalize="none"
+                  autoCorrect="off"
                 />
               </div>
             )}
@@ -222,7 +235,7 @@ export default function SignInPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary w-full disabled:opacity-50"
+              className="btn-primary w-full disabled:opacity-50 py-3 text-base"
             >
               {isLoading
                 ? 'Processing...'
