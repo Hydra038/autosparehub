@@ -119,17 +119,17 @@ export default async function AdminProductsPage() {
                       {formatPrice(product.price_eur)}
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      {product.inventory && product.inventory[0] ? (
+                      {product.inventory ? (
                         <span
                           className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
-                            product.inventory[0].quantity > 20
+                            product.inventory.quantity > 20
                               ? 'bg-green-100 text-green-800'
-                              : product.inventory[0].quantity > 5
+                              : product.inventory.quantity > 5
                               ? 'bg-yellow-100 text-yellow-800'
                               : 'bg-red-100 text-red-800'
                           }`}
                         >
-                          {product.inventory[0].quantity} units
+                          {product.inventory.quantity} units
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground">No inventory</span>

@@ -21,8 +21,8 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
   const images = product.product_images?.sort((a, b) => a.display_order - b.display_order) || []
   const primaryImage = images.find((img) => img.is_primary) || images[0]
   
-  const availableStock = product.inventory?.[0]
-    ? product.inventory[0].quantity - product.inventory[0].reserved_quantity
+  const availableStock = product.inventory
+    ? product.inventory.quantity - product.inventory.reserved_quantity
     : 0
   
   const isInStock = availableStock > 0

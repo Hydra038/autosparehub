@@ -35,7 +35,7 @@ export interface Product {
   inventory?: {
     quantity: number
     reserved_quantity: number
-  }[]
+  } | null
   product_images?: {
     id: string
     image_url: string

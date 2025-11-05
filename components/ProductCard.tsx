@@ -15,10 +15,10 @@ interface ProductCardProps {
       image_url: string
       is_primary: boolean
     }> | null
-    inventory?: Array<{
+    inventory?: {
       quantity: number
       reserved_quantity: number
-    }> | null
+    } | null
   }
 }
 
@@ -26,8 +26,8 @@ export default function ProductCard({ product }: ProductCardProps) {
   const primaryImage = product.product_images?.find((img) => img.is_primary)
   const imageUrl = primaryImage?.image_url || product.product_images?.[0]?.image_url || '/placeholder-product.svg'
   
-  const availableStock = product.inventory?.[0]
-    ? product.inventory[0].quantity - product.inventory[0].reserved_quantity
+  const availableStock = product.inventory
+    ? product.inventory.quantity - product.inventory.reserved_quantity
     : 0
   
   const isInStock = availableStock > 0

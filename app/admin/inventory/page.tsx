@@ -30,13 +30,13 @@ export default async function AdminInventoryPage() {
   const stats = {
     total: products.length,
     lowStock: products.filter(
-      (p) => p.inventory && p.inventory[0] && p.inventory[0].quantity > 0 && p.inventory[0].quantity <= 5
+      (p) => p.inventory && p.inventory.quantity > 0 && p.inventory.quantity <= 5
     ).length,
     outOfStock: products.filter(
-      (p) => !p.inventory || !p.inventory[0] || p.inventory[0].quantity === 0
+      (p) => !p.inventory || p.inventory.quantity === 0
     ).length,
     inStock: products.filter(
-      (p) => p.inventory && p.inventory[0] && p.inventory[0].quantity > 5
+      (p) => p.inventory && p.inventory.quantity > 5
     ).length,
   }
 
@@ -131,7 +131,7 @@ export default async function AdminInventoryPage() {
                 </tr>
               ) : (
                 products.map((product) => {
-                  const quantity = product.inventory?.[0]?.quantity || 0
+                  const quantity = product.inventory?.quantity || 0
                   const stockStatus =
                     quantity === 0
                       ? 'Out of Stock'
