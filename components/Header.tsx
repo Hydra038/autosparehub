@@ -1,11 +1,33 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import CartIcon from './CartIcon'
+import { createClient } from '@/lib/supabaseClient'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      setLoading(false)
+    }
+
+    checkUser()
+
+    // Listen for auth changes
+    const supabase = createClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white shadow-sm">
@@ -64,21 +86,52 @@ export default function Header() {
 
           {/* Right icons */}
           <div className="flex items-center gap-2 md:gap-4">
-            <Link href="/account" className="p-2 hover:text-primary">
-              <svg
-                className="h-5 w-5 md:h-6 md:w-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
-            </Link>
+            {/* Account/Sign In */}
+            {!loading && (
+              user ? (
+                <Link 
+                  href="/dashboard" 
+                  className="flex items-center gap-1 p-2 hover:text-primary"
+                  title="My Account"
+                >
+                  <svg
+                    className="h-5 w-5 md:h-6 md:w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                  <span className="hidden sm:inline text-sm font-medium">Account</span>
+                </Link>
+              ) : (
+                <Link 
+                  href="/sign-in" 
+                  className="flex items-center gap-1 p-2 hover:text-primary"
+                  title="Sign In"
+                >
+                  <svg
+                    className="h-5 w-5 md:h-6 md:w-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                    />
+                  </svg>
+                  <span className="hidden sm:inline text-sm font-medium">Sign In</span>
+                </Link>
+              )
+            )}
             <CartIcon />
           </div>
         </div>

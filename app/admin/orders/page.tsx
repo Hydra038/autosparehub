@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { createServerClient } from '@/lib/supabaseServer'
 import { formatPrice } from '@/lib/currency'
-import AdminLogoutButton from '@/components/AdminLogoutButton'
 
 async function getOrders() {
   const supabase = await createServerClient()
@@ -33,37 +32,11 @@ export default async function AdminOrdersPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Back Button */}
-      <div className="mb-6">
-        <Link
-          href="/admin"
-          className="inline-flex items-center gap-2 text-primary hover:underline"
-        >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Back to Dashboard
-        </Link>
-      </div>
-
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Manage Orders</h1>
-          <p className="mt-2 text-muted-foreground">
-            View and manage all customer orders
-          </p>
-        </div>
-        <AdminLogoutButton />
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Manage Orders</h1>
+        <p className="mt-2 text-muted-foreground">
+          View and manage all customer orders
+        </p>
       </div>
 
       {/* Stats Cards */}

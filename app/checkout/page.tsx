@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useCart } from '@/store/cartStore'
 import { formatPrice } from '@/lib/currency'
 import Image from 'next/image'
+import { createClient } from '@/lib/supabaseClient'
 
 export default function CheckoutPage() {
   const router = useRouter()
@@ -15,22 +16,37 @@ export default function CheckoutPage() {
 
   // Check authentication on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('user')
-    
-    if (!storedUser) {
-      // Redirect to sign in with return URL
-      router.push('/sign-in?redirect=/checkout')
-    } else {
-      const userData = JSON.parse(storedUser)
+    const checkAuth = async () => {
+      const supabase = createClient()
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      
+      if (!authUser) {
+        // Redirect to sign in with return URL
+        router.push('/sign-in?redirect=/checkout')
+        return
+      }
+
+      // Fetch user profile
+      const { data: userData } = await supabase
+        .from('users')
+        .select('email, full_name, phone')
+        .eq('id', authUser.id)
+        .single()
+      
       // Pre-fill form with user data
-      setFormData(prev => ({
-        ...prev,
-        email: userData.email,
-        full_name: userData.full_name,
-      }))
+      if (userData) {
+        setFormData(prev => ({
+          ...prev,
+          email: userData.email || authUser.email || '',
+          full_name: userData.full_name || '',
+          phone: userData.phone || '',
+        }))
+      }
+      
+      setIsCheckingAuth(false)
     }
-    
-    setIsCheckingAuth(false)
+
+    checkAuth()
   }, [router])
 
   const subtotal = getTotalPrice()
@@ -142,15 +158,15 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-3xl font-bold">Checkout</h1>
+    <div className="container mx-auto px-4 py-6 sm:py-8">
+      <h1 className="mb-6 text-2xl font-bold sm:mb-8 sm:text-3xl">Checkout</h1>
 
-      <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-3">
+      <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-3 lg:gap-8">
         {/* Checkout Form */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Contact Information */}
-          <div className="rounded-lg border p-6">
-            <h2 className="mb-4 text-xl font-semibold">Contact Information</h2>
+          <div className="rounded-lg border p-4 sm:p-6">
+            <h2 className="mb-3 text-lg font-semibold sm:mb-4 sm:text-xl">Contact Information</h2>
             <div className="space-y-4">
               <div>
                 <label className="mb-1 block text-sm font-medium">
@@ -197,8 +213,8 @@ export default function CheckoutPage() {
           </div>
 
           {/* Shipping Address */}
-          <div className="rounded-lg border p-6">
-            <h2 className="mb-4 text-xl font-semibold">Shipping Address</h2>
+          <div className="rounded-lg border p-4 sm:p-6">
+            <h2 className="mb-3 text-lg font-semibold sm:mb-4 sm:text-xl">Shipping Address</h2>
             <div className="space-y-4">
               <div>
                 <label className="mb-1 block text-sm font-medium">
@@ -347,8 +363,8 @@ export default function CheckoutPage() {
           </div>
 
           {/* Payment Method */}
-          <div className="rounded-lg border p-6">
-            <h2 className="mb-4 text-xl font-semibold">Payment Method</h2>
+          <div className="rounded-lg border p-4 sm:p-6">
+            <h2 className="mb-3 text-lg font-semibold sm:mb-4 sm:text-xl">Payment Method</h2>
             <div className="space-y-3">
               <div>
                 <label className="flex items-center gap-3 rounded border p-4 hover:bg-gray-50 cursor-pointer">
@@ -501,8 +517,8 @@ export default function CheckoutPage() {
           </div>
 
           {/* Order Notes */}
-          <div className="rounded-lg border p-6">
-            <h2 className="mb-4 text-xl font-semibold">Order Notes (Optional)</h2>
+          <div className="rounded-lg border p-4 sm:p-6">
+            <h2 className="mb-3 text-lg font-semibold sm:mb-4 sm:text-xl">Order Notes (Optional)</h2>
             <textarea
               value={formData.customer_notes}
               onChange={(e) =>
@@ -510,20 +526,20 @@ export default function CheckoutPage() {
               }
               placeholder="Any special instructions for your order?"
               rows={4}
-              className="input w-full"
+              className="input w-full text-sm sm:text-base"
             />
           </div>
         </div>
 
         {/* Order Summary */}
         <div>
-          <div className="sticky top-24 rounded-lg border p-6">
-            <h2 className="mb-4 text-xl font-bold">Order Summary</h2>
+          <div className="sticky top-24 rounded-lg border p-4 sm:p-6">
+            <h2 className="mb-3 text-lg font-bold sm:mb-4 sm:text-xl">Order Summary</h2>
 
             <div className="mb-4 space-y-3">
               {items.map((item) => (
-                <div key={item.product_id} className="flex gap-3">
-                  <div className="relative h-16 w-16 flex-shrink-0 rounded bg-gray-100">
+                <div key={item.product_id} className="flex gap-2 sm:gap-3">
+                  <div className="relative h-12 w-12 flex-shrink-0 rounded bg-gray-100 sm:h-16 sm:w-16">
                     <Image
                       src={item.image_url}
                       alt={item.title}
@@ -532,10 +548,10 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium line-clamp-2">
+                    <p className="text-xs font-medium line-clamp-2 sm:text-sm">
                       {item.title}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground sm:text-sm">
                       Qty: {item.quantity} × {formatPrice(item.price_eur)}
                     </p>
                   </div>
@@ -544,27 +560,27 @@ export default function CheckoutPage() {
             </div>
 
             <div className="space-y-2 border-t pt-4">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span>Subtotal</span>
                 <span>{formatPrice(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span>Shipping</span>
                 <span>{formatPrice(shippingCost)}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span>VAT (19%)</span>
                 <span>{formatPrice(taxAmount)}</span>
               </div>
             </div>
 
-            <div className="mt-4 flex justify-between border-t pt-4 text-lg font-bold">
+            <div className="mt-4 flex justify-between border-t pt-4 text-base font-bold sm:text-lg">
               <span>Total</span>
               <span className="text-primary">{formatPrice(total)}</span>
             </div>
 
             {error && (
-              <div className="mt-4 rounded bg-red-50 p-3 text-sm text-red-600">
+              <div className="mt-4 rounded bg-red-50 p-2 text-xs text-red-600 sm:p-3 sm:text-sm">
                 {error}
               </div>
             )}
@@ -572,7 +588,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={isProcessing}
-              className="btn-primary mt-6 w-full disabled:opacity-50"
+              className="btn-primary mt-6 w-full text-sm disabled:opacity-50 sm:text-base"
             >
               {isProcessing ? 'Processing...' : 'Place Order'}
             </button>

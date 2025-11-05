@@ -37,7 +37,7 @@ async function testAuthSession() {
   } else if (sessionData.session) {
     console.log('✅ Session exists')
     console.log('   Access token:', sessionData.session.access_token.substring(0, 20) + '...')
-    console.log('   Expires at:', new Date(sessionData.session.expires_at! * 1000).toLocaleString())
+    console.log('   Expires at:', new Date(sessionData.session.expires_at * 1000).toLocaleString())
   } else {
     console.log('❌ No session found after sign-in!')
   }

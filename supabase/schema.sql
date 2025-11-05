@@ -14,7 +14,7 @@ CREATE TYPE user_role AS ENUM ('customer', 'admin');
 CREATE TYPE product_condition AS ENUM ('new', 'refurbished', 'used');
 CREATE TYPE order_status AS ENUM ('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded');
 CREATE TYPE payment_status AS ENUM ('pending', 'completed', 'failed', 'refunded');
-CREATE TYPE payment_method AS ENUM ('stripe', 'paypal', 'bank_transfer');
+CREATE TYPE payment_method AS ENUM ('bank_transfer', 'iban', 'paypal');
 
 -- =====================================================
 -- USERS TABLE (extends Supabase auth.users)

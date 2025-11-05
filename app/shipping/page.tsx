@@ -1,13 +1,13 @@
 export default function ShippingPage() {
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-6 sm:py-8">
       <div className="mx-auto max-w-4xl">
-        <h1 className="mb-6 text-3xl font-bold">Shipping Information</h1>
+        <h1 className="mb-4 text-2xl font-bold sm:mb-6 sm:text-3xl">Shipping Information</h1>
 
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* Delivery Options */}
-          <section className="rounded-lg border bg-white p-6">
-            <h2 className="mb-4 text-xl font-semibold">Delivery Options</h2>
+          <section className="rounded-lg border bg-white p-4 sm:p-6">
+            <h2 className="mb-3 text-lg font-semibold sm:mb-4 sm:text-xl">Delivery Options</h2>
             <div className="space-y-4">
               <div className="flex items-start gap-4 border-b pb-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">

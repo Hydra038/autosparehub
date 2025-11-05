@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { formatPrice } from '@/lib/currency'
+import { createClient } from '@/lib/supabaseClient'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -12,22 +13,42 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user')
-    
-    if (!storedUser) {
-      router.push('/sign-in?redirect=/dashboard')
-      return
+    const checkAuth = async () => {
+      const supabase = createClient()
+      const { data: { user: authUser } } = await supabase.auth.getUser()
+      
+      if (!authUser) {
+        router.push('/sign-in?redirect=/dashboard')
+        return
+      }
+
+      // Load user's orders from Supabase with items
+      const { data: userOrders } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            id,
+            product_title,
+            product_image_url,
+            quantity
+          )
+        `)
+        .eq('user_id', authUser.id)
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      setOrders(userOrders || [])
+      setIsLoading(false)
     }
 
-    // Load user's orders
-    const userOrders = JSON.parse(localStorage.getItem('user_orders') || '[]')
-    setOrders(userOrders.reverse().slice(0, 5)) // Most recent 5 orders
-    setIsLoading(false)
+    checkAuth()
   }, [router])
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     if (confirm('Are you sure you want to sign out?')) {
-      localStorage.removeItem('user')
+      const supabase = createClient()
+      await supabase.auth.signOut()
       router.push('/')
     }
   }
@@ -162,7 +183,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-primary">
-                      {formatPrice(order.total_gbp)}
+                      {formatPrice(order.total_eur)}
                     </div>
                     <div className="flex gap-2">
                       <span className="inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
@@ -182,20 +203,20 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {order.items?.slice(0, 3).map((item: any, index: number) => (
+                  {order.order_items?.slice(0, 3).map((item: any, index: number) => (
                     <div key={index} className="flex items-center gap-2">
                       <Image
-                        src={item.image}
-                        alt={item.title}
+                        src={item.product_image_url || '/placeholder.png'}
+                        alt={item.product_title}
                         width={40}
                         height={40}
                         className="rounded object-cover"
                       />
                     </div>
                   ))}
-                  {order.items?.length > 3 && (
+                  {order.order_items?.length > 3 && (
                     <div className="text-sm text-muted-foreground">
-                      +{order.items.length - 3} more
+                      +{order.order_items.length - 3} more
                     </div>
                   )}
                 </div>

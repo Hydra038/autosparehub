@@ -5,14 +5,15 @@ import { useSearchParams } from 'next/navigation'
 import { formatPrice } from '@/lib/currency'
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { createClient } from '@/lib/supabaseClient'
 
 interface OrderItem {
-  id: string
+  product_id: string
   title: string
   sku: string
   quantity: number
   price_eur: number
-  image: string
+  image_url: string
 }
 
 interface ShippingInfo {
@@ -29,13 +30,16 @@ interface ShippingInfo {
 interface Order {
   id: string
   order_number: string
-  total_gbp: number
+  total_eur: number
+  subtotal_eur: number
+  shipping_cost_eur: number
+  tax_amount_eur: number
   status: string
   payment_status: string
+  payment_method: string
   created_at: string
   items: OrderItem[]
-  shipping: ShippingInfo
-  payment_method?: string
+  shipping_address: ShippingInfo
 }
 
 export default function OrderConfirmationPage() {
@@ -43,21 +47,77 @@ export default function OrderConfirmationPage() {
   const order_id = searchParams.get('order_id')
   const [order, setOrder] = useState<Order | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!order_id) {
-      setLoading(false)
-      return
+    const fetchOrder = async () => {
+      if (!order_id) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const supabase = createClient()
+        
+        // Fetch order from Supabase with items
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            order_items (
+              id,
+              product_id,
+              product_title,
+              product_sku,
+              product_image_url,
+              unit_price_eur,
+              quantity,
+              total_price_eur
+            )
+          `)
+          .eq('id', order_id)
+          .single()
+
+        if (orderError) throw orderError
+
+        if (orderData) {
+          // Transform the data to match interface
+          const transformedOrder = {
+            ...orderData,
+            items: orderData.order_items?.map((item: any) => ({
+              product_id: item.product_id,
+              title: item.product_title,
+              sku: item.product_sku,
+              image_url: item.product_image_url,
+              price_eur: item.unit_price_eur,
+              quantity: item.quantity,
+            })) || [],
+            shipping_address: {
+              full_name: orderData.shipping_full_name,
+              email: orderData.shipping_email,
+              phone: orderData.shipping_phone,
+              address_line1: orderData.shipping_address_line1,
+              address_line2: orderData.shipping_address_line2,
+              city: orderData.shipping_city,
+              postal_code: orderData.shipping_postal_code,
+              country: orderData.shipping_country,
+            },
+            subtotal_eur: orderData.subtotal_eur,
+            shipping_cost_eur: orderData.shipping_eur,
+            tax_amount_eur: orderData.tax_eur,
+            total_eur: orderData.total_eur,
+          }
+          setOrder(transformedOrder as any)
+        }
+      } catch (err) {
+        console.error('Error fetching order:', err)
+        setError('Failed to load order details')
+      } finally {
+        setLoading(false)
+      }
     }
 
-    // Load order from localStorage
-    const userOrdersStr = localStorage.getItem('user_orders')
-    if (userOrdersStr) {
-      const userOrders = JSON.parse(userOrdersStr)
-      const foundOrder = userOrders.find((o: Order) => o.id === order_id)
-      setOrder(foundOrder || null)
-    }
-    setLoading(false)
+    fetchOrder()
   }, [order_id])
 
   if (loading) {
@@ -66,6 +126,19 @@ export default function OrderConfirmationPage() {
         <div className="flex justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
         </div>
+        <p className="mt-4 text-muted-foreground">Loading order details...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <h1 className="mb-4 text-2xl font-bold text-red-600">Error</h1>
+        <p className="mb-6 text-muted-foreground">{error}</p>
+        <Link href="/" className="btn-primary">
+          Return to Home
+        </Link>
       </div>
     )
   }
@@ -123,7 +196,7 @@ export default function OrderConfirmationPage() {
           </h1>
           <p className="text-green-700">
             Thank you for your order. We've sent a confirmation email to{' '}
-            <strong>{order.shipping.email}</strong>
+            <strong>{order.shipping_address.email}</strong>
           </p>
         </div>
 
@@ -157,7 +230,7 @@ export default function OrderConfirmationPage() {
                 className="flex items-center gap-4 rounded border p-3"
               >
                 <Image
-                  src={item.image}
+                  src={item.image_url || '/placeholder.jpg'}
                   alt={item.title}
                   width={60}
                   height={60}
@@ -181,12 +254,28 @@ export default function OrderConfirmationPage() {
             ))}
           </div>
 
+          {/* Price Breakdown */}
+          <div className="space-y-2 border-t pt-4">
+            <div className="flex justify-between text-sm">
+              <span>Subtotal</span>
+              <span>{formatPrice(order.subtotal_eur || 0)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Shipping</span>
+              <span>{formatPrice(order.shipping_cost_eur || 0)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>VAT (19%)</span>
+              <span>{formatPrice(order.tax_amount_eur || 0)}</span>
+            </div>
+          </div>
+
           {/* Total */}
           <div className="border-t pt-4">
             <div className="flex justify-between text-xl font-bold">
               <span>Total</span>
               <span className="text-primary">
-                {formatPrice(order.total_gbp)}
+                {formatPrice(order.total_eur || 0)}
               </span>
             </div>
           </div>
@@ -196,14 +285,14 @@ export default function OrderConfirmationPage() {
         <div className="mb-6 rounded-lg border bg-white p-6">
           <h3 className="mb-3 font-semibold">Shipping Address</h3>
           <div className="text-sm">
-            <p className="font-medium">{order.shipping.full_name}</p>
-            <p>{order.shipping.address_line1}</p>
-            {order.shipping.address_line2 && <p>{order.shipping.address_line2}</p>}
+            <p className="font-medium">{order.shipping_address.full_name}</p>
+            <p>{order.shipping_address.address_line1}</p>
+            {order.shipping_address.address_line2 && <p>{order.shipping_address.address_line2}</p>}
             <p>
-              {order.shipping.city}, {order.shipping.postal_code}
+              {order.shipping_address.city}, {order.shipping_address.postal_code}
             </p>
-            <p>{order.shipping.country}</p>
-            {order.shipping.phone && <p className="mt-2">Tel: {order.shipping.phone}</p>}
+            <p>{order.shipping_address.country}</p>
+            {order.shipping_address.phone && <p className="mt-2">Tel: {order.shipping_address.phone}</p>}
           </div>
         </div>
 
@@ -213,7 +302,10 @@ export default function OrderConfirmationPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium capitalize">
-                {order.payment_method || 'Not specified'}
+                {order.payment_method === 'paypal' ? 'PayPal' : 
+                 order.payment_method === 'bank_transfer' ? 'Bank Transfer' :
+                 order.payment_method === 'iban' ? 'IBAN Direct Transfer' : 
+                 'Not specified'}
               </p>
             </div>
             <div>

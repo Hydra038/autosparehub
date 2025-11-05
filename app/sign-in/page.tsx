@@ -93,6 +93,8 @@ export default function SignInPage() {
         }
 
         if (authData.user) {
+          console.log('✅ Sign-in successful! User:', authData.user.email)
+          
           // Fetch user role from public.users
           const { data: userData, error: userError } = await supabase
             .from('users')
@@ -101,7 +103,7 @@ export default function SignInPage() {
             .single()
 
           if (userError) {
-            console.error('Error fetching user role:', userError)
+            console.error('❌ Error fetching user role:', userError)
             // If we can't fetch user profile (RLS error), show specific message
             if (userError.code === '42P17') {
               setError('Database configuration error. Please contact support.')
@@ -114,6 +116,8 @@ export default function SignInPage() {
             return
           }
 
+          console.log('✅ User profile loaded:', userData)
+          
           // Role-based redirect
           const userRole = userData?.role || 'customer'
           const redirectParam = new URLSearchParams(window.location.search).get('redirect')
@@ -121,18 +125,23 @@ export default function SignInPage() {
           let redirectTo = '/dashboard'
           
           if (redirectParam) {
-            // Use redirect parameter if provided
+            // Use redirect parameter if provided (from middleware or direct links)
             redirectTo = redirectParam
+            console.log('📍 Using redirect parameter:', redirectParam)
           } else if (userRole === 'admin') {
-            // Admins go to admin dashboard
+            // Admins go to admin dashboard by default
             redirectTo = '/admin'
+            console.log('👑 Admin user - redirecting to admin dashboard')
           } else {
-            // Customers go to their dashboard
+            // Regular customers go to their dashboard
             redirectTo = '/dashboard'
+            console.log('👤 Customer user - redirecting to customer dashboard')
           }
 
           // Wait for session to be established before redirecting
           await new Promise(resolve => setTimeout(resolve, 500))
+          
+          console.log('🔄 Redirecting to:', redirectTo)
           
           // Use window.location for reliable redirect (especially on mobile)
           window.location.href = redirectTo

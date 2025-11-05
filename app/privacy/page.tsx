@@ -1,13 +1,13 @@
 export default function PrivacyPolicyPage() {
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-6 sm:py-8">
       <div className="mx-auto max-w-4xl">
-        <h1 className="mb-6 text-3xl font-bold">Privacy Policy</h1>
-        <p className="mb-6 text-sm text-muted-foreground">Last updated: November 4, 2025</p>
+        <h1 className="mb-4 text-2xl font-bold sm:mb-6 sm:text-3xl">Privacy Policy</h1>
+        <p className="mb-4 text-xs text-muted-foreground sm:mb-6 sm:text-sm">Last updated: November 4, 2025</p>
 
-        <div className="prose max-w-none space-y-6">
-          <section className="rounded-lg border bg-white p-6">
-            <h2 className="mb-4 text-xl font-semibold">1. Introduction</h2>
+        <div className="prose max-w-none space-y-4 sm:space-y-6">
+          <section className="rounded-lg border bg-white p-4 sm:p-6">
+            <h2 className="mb-3 text-lg font-semibold sm:mb-4 sm:text-xl">1. Introduction</h2>
             <p className="text-muted-foreground">
               Autospare Hub ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy 
               explains how we collect, use, disclose, and safeguard your information when you visit our website 

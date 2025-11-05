@@ -4,11 +4,26 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCart } from '@/store/cartStore'
 import { formatPrice } from '@/lib/currency'
+import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabaseClient'
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotalPrice, clearCart } = useCart()
   const total = getTotalPrice()
   const itemCount = items.length
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+      setLoading(false)
+    }
+
+    checkUser()
+  }, [])
 
   if (itemCount === 0) {
     return (
@@ -41,18 +56,18 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="mb-8 text-3xl font-bold">Shopping Cart</h1>
+      <h1 className="mb-6 text-2xl font-bold md:mb-8 md:text-3xl">Shopping Cart</h1>
 
-      <div className="grid gap-8 lg:grid-cols-3">
+      <div className="grid gap-6 lg:grid-cols-3 lg:gap-8">
         {/* Cart Items */}
         <div className="lg:col-span-2">
           <div className="space-y-4">
             {items.map((item) => (
               <div
                 key={item.product_id}
-                className="flex gap-4 rounded-lg border p-4"
+                className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:gap-4 sm:p-4"
               >
-                <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md bg-gray-100">
+                <div className="relative mx-auto h-24 w-24 flex-shrink-0 overflow-hidden rounded-md bg-gray-100 sm:mx-0">
                   <Image
                     src={item.image_url}
                     alt={item.title}
@@ -64,19 +79,42 @@ export default function CartPage() {
                 <div className="flex flex-1 flex-col">
                   <Link
                     href={`/products/${item.product_id}`}
-                    className="font-medium hover:text-primary"
+                    className="text-sm font-medium hover:text-primary sm:text-base"
                   >
                     {item.title}
                   </Link>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground sm:text-sm">
                     SKU: {item.sku}
                   </p>
-                  <p className="mt-1 font-semibold">
+                  <p className="mt-1 text-sm font-semibold sm:text-base">
                     {formatPrice(item.price_eur)}
                   </p>
                 </div>
 
-                <div className="flex flex-col items-end justify-between">
+                <div className="flex flex-row items-center justify-between sm:flex-col sm:items-end sm:justify-between">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() =>
+                        updateQuantity(item.product_id, item.quantity - 1)
+                      }
+                      className="flex h-8 w-8 items-center justify-center rounded border hover:bg-gray-100"
+                      disabled={item.quantity <= 1}
+                    >
+                      -
+                    </button>
+                    <span className="w-10 text-center font-medium sm:w-12">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() =>
+                        updateQuantity(item.product_id, item.quantity + 1)
+                      }
+                      className="flex h-8 w-8 items-center justify-center rounded border hover:bg-gray-100"
+                    >
+                      +
+                    </button>
+                  </div>
+
                   <button
                     onClick={() => removeItem(item.product_id)}
                     className="text-red-600 hover:text-red-700"
@@ -96,29 +134,6 @@ export default function CartPage() {
                       />
                     </svg>
                   </button>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() =>
-                        updateQuantity(item.product_id, item.quantity - 1)
-                      }
-                      className="flex h-8 w-8 items-center justify-center rounded border hover:bg-gray-100"
-                      disabled={item.quantity <= 1}
-                    >
-                      -
-                    </button>
-                    <span className="w-12 text-center font-medium">
-                      {item.quantity}
-                    </span>
-                    <button
-                      onClick={() =>
-                        updateQuantity(item.product_id, item.quantity + 1)
-                      }
-                      className="flex h-8 w-8 items-center justify-center rounded border hover:bg-gray-100"
-                    >
-                      +
-                    </button>
-                  </div>
                 </div>
               </div>
             ))}
@@ -126,7 +141,7 @@ export default function CartPage() {
 
           <button
             onClick={clearCart}
-            className="mt-4 text-sm text-red-600 hover:underline"
+            className="mt-4 text-xs text-red-600 hover:underline sm:text-sm"
           >
             Clear Cart
           </button>
@@ -134,32 +149,40 @@ export default function CartPage() {
 
         {/* Order Summary */}
         <div>
-          <div className="rounded-lg border p-6">
-            <h2 className="mb-4 text-xl font-bold">Order Summary</h2>
+          <div className="rounded-lg border p-4 sm:p-6">
+            <h2 className="mb-4 text-lg font-bold sm:text-xl">Order Summary</h2>
             
             <div className="space-y-2 border-b pb-4">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span>Subtotal ({itemCount} items)</span>
                 <span>{formatPrice(total)}</span>
               </div>
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span>Shipping</span>
-                <span className="text-green-600">Calculated at checkout</span>
+                <span className="text-green-600">At checkout</span>
               </div>
             </div>
 
-            <div className="mt-4 flex justify-between text-lg font-bold">
+            <div className="mt-4 flex justify-between text-base font-bold sm:text-lg">
               <span>Total</span>
               <span className="text-primary">{formatPrice(total)}</span>
             </div>
 
-            <Link href="/checkout" className="btn-primary mt-6 w-full">
-              Proceed to Checkout
-            </Link>
+            {!loading && (
+              user ? (
+                <Link href="/checkout" className="btn-primary mt-6 w-full text-sm sm:text-base">
+                  Proceed to Checkout
+                </Link>
+              ) : (
+                <Link href="/sign-in?redirect=/checkout" className="btn-primary mt-6 w-full text-sm sm:text-base">
+                  Sign In to Checkout
+                </Link>
+              )
+            )}
 
             <Link
               href="/products"
-              className="btn-secondary mt-3 w-full"
+              className="btn-secondary mt-3 w-full text-sm sm:text-base"
             >
               Continue Shopping
             </Link>

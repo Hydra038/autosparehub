@@ -1,13 +1,9 @@
 import Link from 'next/link'
 import { formatPrice } from '@/lib/currency'
 import { createServerClient } from '@/lib/supabaseServer'
-import AdminLogoutButton from '@/components/AdminLogoutButton'
 
 async function getAdminData() {
   const supabase = await createServerClient()
-
-  // Check if user is admin (in production, use proper auth)
-  // For now, this is a placeholder
 
   // Fetch summary statistics
   const [productsResult, ordersResult, recentOrdersResult] = await Promise.all([
@@ -20,11 +16,16 @@ async function getAdminData() {
       .limit(10),
   ])
 
+  const allOrders = ordersResult.data || []
+
   return {
     totalProducts: productsResult.count || 0,
     totalOrders: ordersResult.count || 0,
     recentOrders: recentOrdersResult.data || [],
-    revenue: ordersResult.data?.reduce((sum, order) => sum + (order.total_eur || 0), 0) || 0,
+    revenue: allOrders.reduce((sum, order) => sum + (order.total_eur || 0), 0),
+    pendingOrders: allOrders.filter(o => o.status === 'pending').length,
+    processingOrders: allOrders.filter(o => o.status === 'processing').length,
+    shippedOrders: allOrders.filter(o => o.status === 'shipped').length,
   }
 }
 
@@ -34,13 +35,13 @@ export default async function AdminPage() {
   return (
     <div className="container mx-auto px-4 py-4 md:py-8">
       <div className="mb-6 md:mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
-        <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full sm:w-auto">
-          <Link href="/admin/products/new" className="btn-primary text-sm md:text-base flex-1 sm:flex-none text-center">
-            + Add Product
-          </Link>
-          <AdminLogoutButton />
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">Manage your e-commerce platform</p>
         </div>
+        <Link href="/admin/products/new" className="btn-primary text-sm md:text-base">
+          + Add Product
+        </Link>
       </div>
 
       {/* Stats Cards */}
@@ -73,127 +74,25 @@ export default async function AdminPage() {
             Pending Orders
           </div>
           <div className="text-2xl md:text-3xl font-bold text-orange-600">
-            {data.recentOrders.filter((o) => o.status === 'pending').length}
+            {data.pendingOrders}
           </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mb-6 md:mb-8 grid gap-4 md:gap-6 grid-cols-2 lg:grid-cols-4">
-        <Link
-          href="/admin/products"
-          className="flex flex-col items-center gap-2 rounded-lg border p-4 md:p-6 transition-all hover:border-primary hover:shadow-md"
-        >
-          <svg
-            className="h-10 w-10 md:h-12 md:w-12 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-            />
-          </svg>
-          <span className="font-semibold text-sm md:text-base text-center">Manage Products</span>
-          <span className="text-xs md:text-sm text-muted-foreground text-center hidden sm:block">
-            Add, edit, or remove products
-          </span>
-        </Link>
-
-        <Link
-          href="/admin/orders"
-          className="flex flex-col items-center gap-2 rounded-lg border p-4 md:p-6 transition-all hover:border-primary hover:shadow-md"
-        >
-          <svg
-            className="h-10 w-10 md:h-12 md:w-12 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          <span className="font-semibold text-sm md:text-base text-center">Manage Orders</span>
-          <span className="text-xs md:text-sm text-muted-foreground text-center hidden sm:block">
-            View and update order status
-          </span>
-        </Link>
-
-        <Link
-          href="/admin/inventory"
-          className="flex flex-col items-center gap-2 rounded-lg border p-4 md:p-6 transition-all hover:border-primary hover:shadow-md"
-        >
-          <svg
-            className="h-10 w-10 md:h-12 md:w-12 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-            />
-          </svg>
-          <span className="font-semibold text-sm md:text-base text-center">Inventory</span>
-          <span className="text-xs md:text-sm text-muted-foreground text-center hidden sm:block">
-            Track and update stock levels
-          </span>
-        </Link>
-
-        <Link
-          href="/admin/users"
-          className="flex flex-col items-center gap-2 rounded-lg border p-4 md:p-6 transition-all hover:border-primary hover:shadow-md"
-        >
-          <svg
-            className="h-10 w-10 md:h-12 md:w-12 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-            />
-          </svg>
-          <span className="font-semibold text-sm md:text-base text-center">Manage Users</span>
-          <span className="text-xs md:text-sm text-muted-foreground text-center hidden sm:block">
-            View and manage user accounts
-          </span>
-        </Link>
-
-        <Link
-          href="/admin/payment-methods"
-          className="flex flex-col items-center gap-2 rounded-lg border p-4 md:p-6 transition-all hover:border-primary hover:shadow-md"
-        >
-          <svg
-            className="h-10 w-10 md:h-12 md:w-12 text-primary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-            />
-          </svg>
-          <span className="font-semibold text-sm md:text-base text-center">Payment</span>
-          <span className="text-xs md:text-sm text-muted-foreground text-center hidden sm:block">
-            Configure payment options
-          </span>
-        </Link>
+      {/* Order Status Overview */}
+      <div className="mb-6 md:mb-8 grid gap-4 md:gap-6 grid-cols-3">
+        <div className="rounded-lg border bg-white p-4">
+          <div className="text-sm font-medium text-muted-foreground">Processing</div>
+          <div className="text-xl md:text-2xl font-bold text-blue-600">{data.processingOrders}</div>
+        </div>
+        <div className="rounded-lg border bg-white p-4">
+          <div className="text-sm font-medium text-muted-foreground">Shipped</div>
+          <div className="text-xl md:text-2xl font-bold text-purple-600">{data.shippedOrders}</div>
+        </div>
+        <div className="rounded-lg border bg-white p-4">
+          <div className="text-sm font-medium text-muted-foreground">Pending</div>
+          <div className="text-xl md:text-2xl font-bold text-yellow-600">{data.pendingOrders}</div>
+        </div>
       </div>
 
       {/* Recent Orders */}

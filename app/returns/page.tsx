@@ -1,13 +1,13 @@
 export default function ReturnsPage() {
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-6 sm:py-8">
       <div className="mx-auto max-w-4xl">
-        <h1 className="mb-6 text-3xl font-bold">Returns Policy</h1>
+        <h1 className="mb-4 text-2xl font-bold sm:mb-6 sm:text-3xl">Returns Policy</h1>
 
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
           {/* Overview */}
-          <section className="rounded-lg border bg-white p-6">
-            <h2 className="mb-4 text-xl font-semibold">Our Returns Guarantee</h2>
+          <section className="rounded-lg border bg-white p-4 sm:p-6">
+            <h2 className="mb-3 text-lg font-semibold sm:mb-4 sm:text-xl">Our Returns Guarantee</h2>
             <p className="mb-4 text-muted-foreground">
               We want you to be completely satisfied with your purchase. If you're not happy with your order, 
               we offer a hassle-free 30-day return policy for most items.
