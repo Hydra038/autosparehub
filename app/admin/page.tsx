@@ -8,7 +8,7 @@ async function getAdminData() {
   // Fetch summary statistics
   const [productsResult, ordersResult, recentOrdersResult] = await Promise.all([
     supabase.from('products').select('id, is_active', { count: 'exact', head: true }),
-    supabase.from('orders').select('id, total_eur, status', { count: 'exact' }),
+    supabase.from('orders').select('id, total_eur, status'),
     supabase
       .from('orders')
       .select('id, order_number, created_at, status, total_eur, shipping_email')
@@ -20,7 +20,7 @@ async function getAdminData() {
 
   return {
     totalProducts: productsResult.count || 0,
-    totalOrders: ordersResult.count || 0,
+    totalOrders: allOrders.length,
     recentOrders: recentOrdersResult.data || [],
     revenue: allOrders.reduce((sum, order) => sum + (order.total_eur || 0), 0),
     pendingOrders: allOrders.filter(o => o.status === 'pending').length,
