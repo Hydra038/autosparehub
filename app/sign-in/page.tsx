@@ -102,6 +102,16 @@ export default function SignInPage() {
 
           if (userError) {
             console.error('Error fetching user role:', userError)
+            // If we can't fetch user profile (RLS error), show specific message
+            if (userError.code === '42P17') {
+              setError('Database configuration error. Please contact support.')
+            } else if (userError.code === 'PGRST116') {
+              setError('User profile not found. Please contact support.')
+            } else {
+              setError('Error loading user profile. Please try again.')
+            }
+            setIsLoading(false)
+            return
           }
 
           // Role-based redirect
