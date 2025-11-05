@@ -7,14 +7,25 @@ import { formatPrice } from '@/lib/currency'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabaseClient'
 
+interface PaymentMethod {
+  id: string
+  name: string
+  type: string
+  is_enabled: boolean
+  instructions: string | null
+  config: any
+  display_order: number
+}
+
 export default function CheckoutPage() {
   const router = useRouter()
   const { items, getTotalPrice, clearCart } = useCart()
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState('')
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
 
-  // Check authentication on mount
+  // Check authentication and fetch payment methods on mount
   useEffect(() => {
     const checkAuth = async () => {
       const supabase = createClient()
@@ -40,6 +51,22 @@ export default function CheckoutPage() {
           email: userData.email || authUser.email || '',
           full_name: userData.full_name || '',
           phone: userData.phone || '',
+        }))
+      }
+
+      // Fetch enabled payment methods
+      const { data: methods } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .eq('is_enabled', true)
+        .order('display_order', { ascending: true })
+
+      if (methods && methods.length > 0) {
+        setPaymentMethods(methods)
+        // Set first enabled method as default
+        setFormData(prev => ({
+          ...prev,
+          payment_method: methods[0].type as any,
         }))
       }
       
@@ -365,152 +392,70 @@ export default function CheckoutPage() {
           {/* Payment Method */}
           <div className="rounded-lg border p-4 sm:p-6">
             <h2 className="mb-3 text-lg font-semibold sm:mb-4 sm:text-xl">Payment Method</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="flex items-center gap-3 rounded border p-4 hover:bg-gray-50 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="paypal"
-                    checked={formData.payment_method === 'paypal'}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        payment_method: e.target.value as 'paypal',
-                      })
-                    }
-                    className="h-4 w-4"
-                  />
-                  <span className="font-medium">PayPal</span>
-                </label>
-                
-                {/* PayPal Details - Show when selected */}
-                {formData.payment_method === 'paypal' && (
-                  <div className="mt-2 ml-7 rounded-lg bg-blue-50 p-4">
-                    <h4 className="mb-2 font-semibold text-blue-900 text-sm">PayPal Payment Instructions</h4>
-                    <p className="text-xs text-blue-800 mb-2">
-                      Please send your payment to our PayPal account:
-                    </p>
-                    <div className="rounded bg-white p-2 mb-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs font-medium text-gray-700">PayPal Email:</span>
-                        <span className="text-xs text-gray-900 font-semibold">payments@autosparehub.eu</span>
-                      </div>
-                    </div>
-                    <div className="text-xs text-blue-700 space-y-1">
-                      <p>• Log in to your PayPal account</p>
-                      <p>• Send payment to: <strong>payments@autosparehub.eu</strong></p>
-                      <p>• Include your order number in the payment note</p>
-                      <p>• Payment is usually confirmed within minutes</p>
-                    </div>
-                  </div>
-                )}
+            
+            {paymentMethods.length === 0 ? (
+              <div className="rounded border border-red-200 bg-red-50 p-4 text-red-700">
+                <p className="font-semibold">No payment methods available</p>
+                <p className="text-sm">Please contact support to complete your order.</p>
               </div>
-
-              <div>
-                <label className="flex items-center gap-3 rounded border p-4 hover:bg-gray-50 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="bank_transfer"
-                    checked={formData.payment_method === 'bank_transfer'}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        payment_method: e.target.value as 'bank_transfer',
-                      })
-                    }
-                    className="h-4 w-4"
-                  />
-                  <span className="font-medium">Bank Transfer</span>
-                </label>
-                
-                {/* Bank Transfer Details - Show when selected */}
-                {formData.payment_method === 'bank_transfer' && (
-                  <div className="mt-2 ml-7 rounded-lg bg-green-50 p-4">
-                    <h4 className="mb-2 font-semibold text-green-900 text-sm">Bank Transfer Details</h4>
-                    <p className="text-xs text-green-800 mb-2">
-                      Please transfer the total amount to the following bank account:
-                    </p>
-                    <div className="rounded bg-white p-3 text-xs space-y-2">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Bank Name:</span>
-                        <span className="text-gray-900">Deutsche Bank AG</span>
+            ) : (
+              <div className="space-y-3">
+                {paymentMethods.map((method) => (
+                  <div key={method.id}>
+                    <label className="flex items-center gap-3 rounded border p-4 hover:bg-gray-50 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="payment"
+                        value={method.type}
+                        checked={formData.payment_method === method.type}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            payment_method: e.target.value as any,
+                          })
+                        }
+                        className="h-4 w-4"
+                      />
+                      <span className="font-medium">{method.name}</span>
+                    </label>
+                    
+                    {/* Show details when selected */}
+                    {formData.payment_method === method.type && method.instructions && (
+                      <div className={`mt-2 ml-7 rounded-lg p-4 ${
+                        method.type === 'paypal' ? 'bg-blue-50' : 
+                        method.type === 'bank_transfer' ? 'bg-green-50' : 
+                        method.type === 'iban' ? 'bg-purple-50' : 'bg-gray-50'
+                      }`}>
+                        <h4 className={`mb-2 font-semibold text-sm ${
+                          method.type === 'paypal' ? 'text-blue-900' : 
+                          method.type === 'bank_transfer' ? 'text-green-900' : 
+                          method.type === 'iban' ? 'text-purple-900' : 'text-gray-900'
+                        }`}>
+                          {method.name} Details
+                        </h4>
+                        <p className={`text-xs mb-2 ${
+                          method.type === 'paypal' ? 'text-blue-800' : 
+                          method.type === 'bank_transfer' ? 'text-green-800' : 
+                          method.type === 'iban' ? 'text-purple-800' : 'text-gray-800'
+                        }`}>
+                          {method.instructions}
+                        </p>
+                        {method.config && Object.keys(method.config).length > 0 && (
+                          <div className="rounded bg-white p-3 text-xs space-y-2">
+                            {Object.entries(method.config).map(([key, value]) => (
+                              <div key={key} className="flex justify-between">
+                                <span className="font-medium text-gray-700">{key}:</span>
+                                <span className="text-gray-900 font-mono text-xs">{value as string}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Account Holder:</span>
-                        <span className="text-gray-900">Autospare Hub GmbH</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">IBAN:</span>
-                        <span className="text-gray-900 font-mono text-xs">DE89 3704 0044 0532 0130 00</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">BIC/SWIFT:</span>
-                        <span className="text-gray-900 font-mono">COBADEFFXXX</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Reference:</span>
-                        <span className="text-gray-900 font-mono">Order #[Will be provided]</span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-green-700 mt-2">
-                      ⚠️ Please include your order number in the payment reference. Your order will be processed once we receive the payment (usually 1-3 business days).
-                    </p>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-
-              <div>
-                <label className="flex items-center gap-3 rounded border p-4 hover:bg-gray-50 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="iban"
-                    checked={formData.payment_method === 'iban'}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        payment_method: e.target.value as 'iban',
-                      })
-                    }
-                    className="h-4 w-4"
-                  />
-                  <span className="font-medium">IBAN Direct Transfer</span>
-                </label>
-                
-                {/* IBAN Details - Show when selected */}
-                {formData.payment_method === 'iban' && (
-                  <div className="mt-2 ml-7 rounded-lg bg-purple-50 p-4">
-                    <h4 className="mb-2 font-semibold text-purple-900 text-sm">IBAN Direct Transfer Details</h4>
-                    <p className="text-xs text-purple-800 mb-2">
-                      Transfer payment directly to our IBAN:
-                    </p>
-                    <div className="rounded bg-white p-3 text-xs space-y-2">
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Account Holder:</span>
-                        <span className="text-gray-900">Autospare Hub GmbH</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">IBAN:</span>
-                        <span className="text-gray-900 font-mono text-xs">DE89 3704 0044 0532 0130 00</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">BIC:</span>
-                        <span className="text-gray-900 font-mono">COBADEFFXXX</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-medium text-gray-700">Bank:</span>
-                        <span className="text-gray-900">Deutsche Bank AG</span>
-                      </div>
-                    </div>
-                    <p className="text-xs text-purple-700 mt-2">
-                      💡 Please use your order number as the payment reference for faster processing.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
             <p className="mt-4 text-sm text-muted-foreground">
               � Payment processing is currently in demo mode. No actual charges will be made.
             </p>
