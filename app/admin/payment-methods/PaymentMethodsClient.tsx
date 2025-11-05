@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabaseClient'
 
 interface PaymentMethod {
@@ -10,7 +10,7 @@ interface PaymentMethod {
   is_enabled: boolean
   instructions: string | null
   config: any
-  display_order: number
+  display_order?: number // Make it optional
 }
 
 interface Props {
@@ -22,36 +22,74 @@ export default function PaymentMethodsClient({ initialMethods }: Props) {
   const [isEditing, setIsEditing] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<PaymentMethod | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const supabase = createClient()
 
+  // Clear messages after 3 seconds
+  useEffect(() => {
+    if (error || success) {
+      const timer = setTimeout(() => {
+        setError(null)
+        setSuccess(null)
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [error, success])
+
   const refreshMethods = async () => {
-    const { data } = await supabase
-      .from('payment_methods')
-      .select('*')
-      .order('display_order', { ascending: true })
-    
-    if (data) {
-      setPaymentMethods(data)
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('payment_methods')
+        .select('*')
+        .order('display_order', { ascending: true, nullsFirst: false })
+      
+      if (fetchError) {
+        console.error('Error fetching payment methods:', fetchError)
+        setError(`Failed to fetch payment methods: ${fetchError.message}`)
+        return
+      }
+
+      if (data) {
+        setPaymentMethods(data)
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err)
+      setError('An unexpected error occurred. Please check the console.')
     }
   }
 
   const handleToggleActive = async (id: string) => {
     setLoading(id)
+    setError(null)
+    setSuccess(null)
+    
     const method = paymentMethods.find(pm => pm.id === id)
-    if (!method) return
-
-    const { error } = await supabase
-      .from('payment_methods')
-      .update({ is_enabled: !method.is_enabled })
-      .eq('id', id)
-
-    if (error) {
-      console.error('Error toggling payment method:', error)
-      alert('Failed to update payment method')
-    } else {
-      await refreshMethods()
+    if (!method) {
+      setError('Payment method not found')
+      setLoading(null)
+      return
     }
+
+    try {
+      const { error: updateError } = await supabase
+        .from('payment_methods')
+        .update({ is_enabled: !method.is_enabled })
+        .eq('id', id)
+
+      if (updateError) {
+        console.error('Error toggling payment method:', updateError)
+        setError(`Failed to update: ${updateError.message}`)
+      } else {
+        await refreshMethods()
+        setSuccess(`${method.name} ${!method.is_enabled ? 'enabled' : 'disabled'} successfully`)
+      }
+    } catch (err: any) {
+      console.error('Unexpected error:', err)
+      setError(`Unexpected error: ${err.message || 'Please check console'}`)
+    }
+    
     setLoading(null)
   }
 
@@ -59,79 +97,115 @@ export default function PaymentMethodsClient({ initialMethods }: Props) {
     if (!confirm('Are you sure you want to delete this payment method?')) return
 
     setLoading(id)
-    const { error } = await supabase
-      .from('payment_methods')
-      .delete()
-      .eq('id', id)
+    setError(null)
+    setSuccess(null)
 
-    if (error) {
-      console.error('Error deleting payment method:', error)
-      alert('Failed to delete payment method')
-    } else {
-      await refreshMethods()
+    try {
+      const { error: deleteError } = await supabase
+        .from('payment_methods')
+        .delete()
+        .eq('id', id)
+
+      if (deleteError) {
+        console.error('Error deleting payment method:', deleteError)
+        setError(`Failed to delete: ${deleteError.message}`)
+      } else {
+        await refreshMethods()
+        setSuccess('Payment method deleted successfully')
+      }
+    } catch (err: any) {
+      console.error('Unexpected error:', err)
+      setError(`Unexpected error: ${err.message || 'Please check console'}`)
     }
+    
     setLoading(null)
   }
 
   const handleEdit = (pm: PaymentMethod) => {
     setIsEditing(pm.id)
     setEditForm({ ...pm })
+    setError(null)
+    setSuccess(null)
   }
 
   const handleSave = async () => {
     if (!editForm) return
     
     setLoading(editForm.id)
-    const { error } = await supabase
-      .from('payment_methods')
-      .update({
-        name: editForm.name,
-        type: editForm.type,
-        instructions: editForm.instructions,
-        config: editForm.config,
-      })
-      .eq('id', editForm.id)
+    setError(null)
+    setSuccess(null)
 
-    if (error) {
-      console.error('Error updating payment method:', error)
-      alert('Failed to update payment method')
-    } else {
-      await refreshMethods()
-      setIsEditing(null)
-      setEditForm(null)
+    try {
+      const { error: updateError } = await supabase
+        .from('payment_methods')
+        .update({
+          name: editForm.name,
+          type: editForm.type,
+          instructions: editForm.instructions,
+          config: editForm.config,
+        })
+        .eq('id', editForm.id)
+
+      if (updateError) {
+        console.error('Error updating payment method:', updateError)
+        setError(`Failed to save: ${updateError.message}`)
+      } else {
+        await refreshMethods()
+        setSuccess('Payment method updated successfully')
+        setIsEditing(null)
+        setEditForm(null)
+      }
+    } catch (err: any) {
+      console.error('Unexpected error:', err)
+      setError(`Unexpected error: ${err.message || 'Please check console'}`)
     }
+    
     setLoading(null)
   }
 
   const handleCancel = () => {
     setIsEditing(null)
     setEditForm(null)
+    setError(null)
+    setSuccess(null)
   }
 
   const handleAddNew = async () => {
     setLoading('new')
+    setError(null)
+    setSuccess(null)
+
     const newMethod = {
       name: 'New Payment Method',
       type: 'other' as const,
       is_enabled: false,
       instructions: '',
       config: {},
-      display_order: paymentMethods.length + 1,
+      display_order: (paymentMethods.length > 0 
+        ? Math.max(...paymentMethods.map(pm => pm.display_order || 0)) + 1 
+        : 1),
     }
 
-    const { data, error } = await supabase
-      .from('payment_methods')
-      .insert([newMethod])
-      .select()
-      .single()
+    try {
+      const { data, error: insertError } = await supabase
+        .from('payment_methods')
+        .insert([newMethod])
+        .select()
+        .single()
 
-    if (error) {
-      console.error('Error creating payment method:', error)
-      alert('Failed to create payment method')
-    } else if (data) {
-      await refreshMethods()
-      handleEdit(data)
+      if (insertError) {
+        console.error('Error creating payment method:', insertError)
+        setError(`Failed to create: ${insertError.message}`)
+      } else if (data) {
+        await refreshMethods()
+        setSuccess('Payment method created successfully')
+        handleEdit(data)
+      }
+    } catch (err: any) {
+      console.error('Unexpected error:', err)
+      setError(`Unexpected error: ${err.message || 'Please check console'}`)
     }
+    
     setLoading(null)
   }
 
@@ -164,6 +238,31 @@ export default function PaymentMethodsClient({ initialMethods }: Props) {
 
   return (
     <div className="container mx-auto px-4 py-4 sm:py-8">
+      {/* Error/Success Notifications */}
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 sm:p-4 text-red-800 text-sm sm:text-base">
+          <div className="flex items-start gap-2">
+            <span className="text-red-600 font-bold text-lg">⚠</span>
+            <div className="flex-1">
+              <p className="font-semibold">Error</p>
+              <p className="text-xs sm:text-sm">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 sm:p-4 text-green-800 text-sm sm:text-base">
+          <div className="flex items-start gap-2">
+            <span className="text-green-600 font-bold text-lg">✓</span>
+            <div className="flex-1">
+              <p className="font-semibold">Success</p>
+              <p className="text-xs sm:text-sm">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Payment Methods</h1>
@@ -174,7 +273,7 @@ export default function PaymentMethodsClient({ initialMethods }: Props) {
         <button 
           onClick={handleAddNew} 
           disabled={loading === 'new'}
-          className="btn-primary text-sm sm:text-base w-full sm:w-auto disabled:opacity-50"
+          className="btn-primary text-sm sm:text-base w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading === 'new' ? 'Creating...' : '+ Add Payment Method'}
         </button>
@@ -262,7 +361,7 @@ export default function PaymentMethodsClient({ initialMethods }: Props) {
                   </div>
                   <div className="space-y-2">
                     {Object.entries(editForm?.config || {}).map(([key, value]) => (
-                      <div key={key} className="flex gap-2">
+                      <div key={key} className="flex flex-col sm:flex-row gap-2">
                         <input
                           type="text"
                           value={key}
@@ -275,7 +374,7 @@ export default function PaymentMethodsClient({ initialMethods }: Props) {
                             )
                           }}
                           placeholder="Field name"
-                          className="input w-1/3"
+                          className="input w-full sm:w-1/3"
                         />
                         <input
                           type="text"
@@ -286,24 +385,24 @@ export default function PaymentMethodsClient({ initialMethods }: Props) {
                         />
                         <button
                           onClick={() => removeConfigField(key)}
-                          className="btn-secondary px-3"
+                          className="btn-secondary px-3 w-full sm:w-auto"
                         >
-                          ×
+                          Remove
                         </button>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <button 
                     onClick={handleSave} 
                     disabled={loading === editForm?.id}
-                    className="btn-primary disabled:opacity-50"
+                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
                   >
                     {loading === editForm?.id ? 'Saving...' : 'Save Changes'}
                   </button>
-                  <button onClick={handleCancel} className="btn-secondary">
+                  <button onClick={handleCancel} className="btn-secondary w-full sm:w-auto">
                     Cancel
                   </button>
                 </div>
@@ -334,24 +433,25 @@ export default function PaymentMethodsClient({ initialMethods }: Props) {
                       </p>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col sm:flex-row flex-wrap gap-2">
                     <button
                       onClick={() => handleToggleActive(pm.id)}
                       disabled={loading === pm.id}
-                      className="btn-secondary text-xs sm:text-sm flex-1 sm:flex-none disabled:opacity-50"
+                      className="btn-secondary text-xs sm:text-sm w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading === pm.id ? 'Updating...' : (pm.is_enabled ? 'Disable' : 'Enable')}
                     </button>
                     <button
                       onClick={() => handleEdit(pm)}
-                      className="btn-secondary text-xs sm:text-sm flex-1 sm:flex-none"
+                      disabled={loading !== null}
+                      className="btn-secondary text-xs sm:text-sm w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(pm.id)}
                       disabled={loading === pm.id}
-                      className="btn-secondary text-xs sm:text-sm text-red-600 flex-1 sm:flex-none disabled:opacity-50"
+                      className="btn-secondary text-xs sm:text-sm text-red-600 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading === pm.id ? 'Deleting...' : 'Delete'}
                     </button>
