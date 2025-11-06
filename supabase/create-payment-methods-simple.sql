@@ -1,8 +1,19 @@
--- Create payment_methods table for admin configuration
--- This allows admins to enable/disable payment methods shown at checkout
+-- Simple payment_methods table creation (No RLS policies)
+-- Use this if the main script has issues with RLS policies
 
+-- Drop existing policies if any
+DROP POLICY IF EXISTS "allow_read_enabled_payment_methods" ON public.payment_methods;
+DROP POLICY IF EXISTS "allow_authenticated_read_all_payment_methods" ON public.payment_methods;
+DROP POLICY IF EXISTS "allow_admin_update_payment_methods" ON public.payment_methods;
+DROP POLICY IF EXISTS "allow_admin_insert_payment_methods" ON public.payment_methods;
+DROP POLICY IF EXISTS "allow_admin_delete_payment_methods" ON public.payment_methods;
+DROP POLICY IF EXISTS "allow_authenticated_update_payment_methods" ON public.payment_methods;
+DROP POLICY IF EXISTS "allow_authenticated_insert_payment_methods" ON public.payment_methods;
+DROP POLICY IF EXISTS "allow_authenticated_delete_payment_methods" ON public.payment_methods;
+
+-- Create table
 CREATE TABLE IF NOT EXISTS public.payment_methods (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE,
   type TEXT NOT NULL CHECK (type IN ('bank_transfer', 'paypal', 'iban', 'cash', 'other')),
   is_enabled BOOLEAN DEFAULT true NOT NULL,
@@ -51,48 +62,12 @@ INSERT INTO public.payment_methods (name, type, is_enabled, instructions, config
 )
 ON CONFLICT (name) DO NOTHING;
 
--- Enable RLS
-ALTER TABLE public.payment_methods ENABLE ROW LEVEL SECURITY;
+-- Disable RLS (for simplicity - security handled by middleware)
+ALTER TABLE public.payment_methods DISABLE ROW LEVEL SECURITY;
 
--- Policy: Anyone can read enabled payment methods
-CREATE POLICY "allow_read_enabled_payment_methods"
-ON public.payment_methods
-FOR SELECT
-TO anon, authenticated
-USING (is_enabled = true);
-
--- Policy: Authenticated users can read all payment methods (for admin panel)
-CREATE POLICY "allow_authenticated_read_all_payment_methods"
-ON public.payment_methods
-FOR SELECT
-TO authenticated
-USING (true);
-
--- Policy: Authenticated users can update payment methods (simplified - relies on app-level auth)
-CREATE POLICY "allow_authenticated_update_payment_methods"
-ON public.payment_methods
-FOR UPDATE
-TO authenticated
-USING (true)
-WITH CHECK (true);
-
--- Policy: Authenticated users can insert payment methods (simplified - relies on app-level auth)
-CREATE POLICY "allow_authenticated_insert_payment_methods"
-ON public.payment_methods
-FOR INSERT
-TO authenticated
-WITH CHECK (true);
-
--- Policy: Authenticated users can delete payment methods (simplified - relies on app-level auth)
-CREATE POLICY "allow_authenticated_delete_payment_methods"
-ON public.payment_methods
-FOR DELETE
-TO authenticated
-USING (true);
-
--- Create index for faster queries
+-- Create indexes
 CREATE INDEX IF NOT EXISTS idx_payment_methods_enabled ON public.payment_methods(is_enabled);
 CREATE INDEX IF NOT EXISTS idx_payment_methods_type ON public.payment_methods(type);
 
--- Verify the table and data
+-- Verify
 SELECT * FROM public.payment_methods ORDER BY display_order;

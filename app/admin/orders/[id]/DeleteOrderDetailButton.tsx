@@ -22,38 +22,45 @@ export default function DeleteOrderDetailButton({ orderId, orderNumber }: Props)
     const supabase = createClient()
 
     try {
+      console.log('Deleting order:', orderId, orderNumber)
+
       // First delete order items
-      const { error: itemsError } = await supabase
+      const { error: itemsError, count: itemsCount } = await supabase
         .from('order_items')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('order_id', orderId)
 
       if (itemsError) {
         console.error('Error deleting order items:', itemsError)
-        alert(`Failed to delete order items: ${itemsError.message}`)
+        alert(`Failed to delete order items: ${itemsError.message}\n\nCheck console for details.`)
         setIsDeleting(false)
         return
       }
 
+      console.log(`Deleted ${itemsCount} order items`)
+
       // Then delete the order
-      const { error: orderError } = await supabase
+      const { error: orderError, count: orderCount } = await supabase
         .from('orders')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', orderId)
 
       if (orderError) {
         console.error('Error deleting order:', orderError)
-        alert(`Failed to delete order: ${orderError.message}`)
+        alert(`Failed to delete order: ${orderError.message}\n\nCheck console for details.`)
         setIsDeleting(false)
         return
       }
 
+      console.log(`Deleted ${orderCount} order(s)`)
+
       // Success - redirect to orders list
+      alert(`Order ${orderNumber} deleted successfully!`)
       router.push('/admin/orders')
       router.refresh()
     } catch (error: any) {
       console.error('Unexpected error:', error)
-      alert(`An unexpected error occurred: ${error.message || 'Please check console'}`)
+      alert(`An unexpected error occurred: ${error.message || 'Unknown error'}\n\nCheck console for details.`)
       setIsDeleting(false)
     }
   }

@@ -43,7 +43,7 @@ export default function PaymentMethodsClient({ initialMethods }: Props) {
       const { data, error: fetchError } = await supabase
         .from('payment_methods')
         .select('*')
-        .order('display_order', { ascending: true, nullsFirst: false })
+        .order('id', { ascending: true }) // Use id instead of display_order
       
       if (fetchError) {
         console.error('Error fetching payment methods:', fetchError)
@@ -52,7 +52,13 @@ export default function PaymentMethodsClient({ initialMethods }: Props) {
       }
 
       if (data) {
-        setPaymentMethods(data)
+        // Sort by display_order if it exists, otherwise keep order by id
+        const sorted = data.sort((a, b) => {
+          const orderA = a.display_order ?? 999
+          const orderB = b.display_order ?? 999
+          return orderA - orderB
+        })
+        setPaymentMethods(sorted)
       }
     } catch (err) {
       console.error('Unexpected error:', err)

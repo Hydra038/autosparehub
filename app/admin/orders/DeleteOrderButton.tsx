@@ -14,7 +14,7 @@ export default function DeleteOrderButton({ orderId, orderNumber }: Props) {
   const router = useRouter()
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete order ${orderNumber}? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete order ${orderNumber}?\n\nThis will permanently delete:\n- The order\n- All order items\n\nThis action cannot be undone.`)) {
       return
     }
 
@@ -22,37 +22,44 @@ export default function DeleteOrderButton({ orderId, orderNumber }: Props) {
     const supabase = createClient()
 
     try {
+      console.log('Deleting order:', orderId, orderNumber)
+
       // First delete order items
-      const { error: itemsError } = await supabase
+      const { error: itemsError, count: itemsCount } = await supabase
         .from('order_items')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('order_id', orderId)
 
       if (itemsError) {
         console.error('Error deleting order items:', itemsError)
-        alert('Failed to delete order items')
+        alert(`Failed to delete order items: ${itemsError.message}\n\nCheck console for details.`)
         setIsDeleting(false)
         return
       }
 
+      console.log(`Deleted ${itemsCount} order items`)
+
       // Then delete the order
-      const { error: orderError } = await supabase
+      const { error: orderError, count: orderCount } = await supabase
         .from('orders')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('id', orderId)
 
       if (orderError) {
         console.error('Error deleting order:', orderError)
-        alert('Failed to delete order')
+        alert(`Failed to delete order: ${orderError.message}\n\nCheck console for details.`)
         setIsDeleting(false)
         return
       }
 
+      console.log(`Deleted ${orderCount} order(s)`)
+
       // Success - refresh the page
+      alert(`Order ${orderNumber} deleted successfully!`)
       router.refresh()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Unexpected error:', error)
-      alert('An unexpected error occurred')
+      alert(`An unexpected error occurred: ${error.message || 'Unknown error'}\n\nCheck console for details.`)
       setIsDeleting(false)
     }
   }

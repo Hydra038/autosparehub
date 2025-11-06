@@ -6,9 +6,9 @@ ALTER TABLE payment_methods
 ADD COLUMN IF NOT EXISTS display_order INTEGER DEFAULT 0;
 
 -- Step 2: Update existing records with display_order values
-UPDATE payment_methods SET display_order = 1 WHERE type = 'paypal';
-UPDATE payment_methods SET display_order = 2 WHERE type = 'bank_transfer';
-UPDATE payment_methods SET display_order = 3 WHERE type = 'iban';
+UPDATE payment_methods SET display_order = 1 WHERE type = 'paypal' OR name ILIKE '%paypal%';
+UPDATE payment_methods SET display_order = 2 WHERE type = 'bank_transfer' OR name ILIKE '%bank%';
+UPDATE payment_methods SET display_order = 3 WHERE type = 'iban' OR name ILIKE '%iban%';
 
 -- Step 3: Set any remaining records to a high number
 UPDATE payment_methods 

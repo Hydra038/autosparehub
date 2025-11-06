@@ -14,7 +14,7 @@ interface PaymentMethod {
   is_enabled: boolean
   instructions: string | null
   config: any
-  display_order: number
+  display_order?: number // Make optional
 }
 
 export default function CheckoutPage() {
@@ -55,18 +55,26 @@ export default function CheckoutPage() {
       }
 
       // Fetch enabled payment methods
-      const { data: methods } = await supabase
+      const { data: methods, error: methodsError } = await supabase
         .from('payment_methods')
         .select('*')
         .eq('is_enabled', true)
-        .order('display_order', { ascending: true })
+        .order('id', { ascending: true }) // Use id as fallback
 
-      if (methods && methods.length > 0) {
-        setPaymentMethods(methods)
+      if (methodsError) {
+        console.error('Error fetching payment methods:', methodsError)
+      } else if (methods && methods.length > 0) {
+        // Sort by display_order if it exists
+        const sorted = methods.sort((a, b) => {
+          const orderA = a.display_order ?? 999
+          const orderB = b.display_order ?? 999
+          return orderA - orderB
+        })
+        setPaymentMethods(sorted)
         // Set first enabled method as default
         setFormData(prev => ({
           ...prev,
-          payment_method: methods[0].type as any,
+          payment_method: sorted[0].type as any,
         }))
       }
       
