@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createServerClient } from '@/lib/supabaseServer'
 import { formatPrice } from '@/lib/currency'
+import DeleteOrderButton from './DeleteOrderButton'
 
 async function getOrders() {
   const supabase = await createServerClient()
@@ -135,12 +136,18 @@ export default async function AdminOrdersPage() {
                       <span className="capitalize">{order.payment_method}</span>
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <Link
-                        href={`/admin/orders/${order.id}`}
-                        className="text-primary hover:underline"
-                      >
-                        View Details
-                      </Link>
+                      <div className="flex items-center gap-3">
+                        <Link
+                          href={`/admin/orders/${order.id}`}
+                          className="text-primary hover:underline"
+                        >
+                          View
+                        </Link>
+                        <DeleteOrderButton 
+                          orderId={order.id} 
+                          orderNumber={order.order_number} 
+                        />
+                      </div>
                     </td>
                   </tr>
                 ))

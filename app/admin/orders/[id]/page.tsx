@@ -4,6 +4,7 @@ import { createServerClient } from '@/lib/supabaseServer'
 import { formatPrice } from '@/lib/currency'
 import { OrderStatusSelector } from '@/components/OrderStatusSelector'
 import AdminLogoutButton from '@/components/AdminLogoutButton'
+import DeleteOrderDetailButton from './DeleteOrderDetailButton'
 
 async function getOrder(id: string) {
   const supabase = await createServerClient()
@@ -85,14 +86,20 @@ export default async function AdminOrderDetailPage({
       </div>
 
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Order Details</h1>
           <p className="mt-2 text-muted-foreground">
             Order #{order.order_number}
           </p>
         </div>
-        <AdminLogoutButton />
+        <div className="flex items-center gap-3">
+          <DeleteOrderDetailButton 
+            orderId={order.id} 
+            orderNumber={order.order_number} 
+          />
+          <AdminLogoutButton />
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
