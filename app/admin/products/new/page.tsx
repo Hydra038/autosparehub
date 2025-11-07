@@ -1,14 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabaseClient'
+
+interface Category {
+  id: string
+  name: string
+  slug: string
+}
 
 export default function NewProductPage() {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [imageFiles, setImageFiles] = useState<File[]>([])
+  const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
 
   const [formData, setFormData] = useState({
     sku: '',
@@ -34,11 +42,54 @@ export default function NewProductPage() {
     reorder_quantity: '50',
   })
 
+  // Fetch categories on mount
+  useEffect(() => {
+    async function fetchCategories() {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name, slug')
+        .order('name')
+
+      if (error) {
+        console.error('Error fetching categories:', error)
+        return
+      }
+
+      setCategories(data || [])
+    }
+
+    fetchCategories()
+  }, [])
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setImageFiles(Array.from(e.target.files))
+      const files = Array.from(e.target.files)
+      setImageFiles(files)
+
+      // Create preview URLs
+      const previews = files.map((file) => URL.createObjectURL(file))
+      setImagePreviews(previews)
     }
   }
+
+  const removeImage = (index: number) => {
+    const newFiles = imageFiles.filter((_, i) => i !== index)
+    const newPreviews = imagePreviews.filter((_, i) => i !== index)
+    
+    // Revoke the URL to free memory
+    URL.revokeObjectURL(imagePreviews[index])
+    
+    setImageFiles(newFiles)
+    setImagePreviews(newPreviews)
+  }
+
+  // Cleanup preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach((url) => URL.revokeObjectURL(url))
+    }
+  }, [imagePreviews])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -214,6 +265,61 @@ export default function NewProductPage() {
                 className="input w-full"
               />
             </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Category <span className="text-red-600">*</span>
+              </label>
+              <select
+                required
+                value={formData.category_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, category_id: e.target.value })
+                }
+                className="input w-full"
+              >
+                <option value="">Select a category...</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+              {categories.length === 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  No categories found. Please create categories first.
+                </p>
+              )}
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium">Manufacturer</label>
+                <input
+                  type="text"
+                  value={formData.manufacturer}
+                  onChange={(e) =>
+                    setFormData({ ...formData, manufacturer: e.target.value })
+                  }
+                  className="input w-full"
+                  placeholder="e.g., Bosch, Brembo"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">
+                  Manufacturer Part Number
+                </label>
+                <input
+                  type="text"
+                  value={formData.manufacturer_part_number}
+                  onChange={(e) =>
+                    setFormData({ ...formData, manufacturer_part_number: e.target.value })
+                  }
+                  className="input w-full"
+                  placeholder="e.g., BP1234"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -310,9 +416,51 @@ export default function NewProductPage() {
               className="input w-full"
             />
             {imageFiles.length > 0 && (
-              <p className="mt-2 text-sm text-muted-foreground">
-                {imageFiles.length} image(s) selected
-              </p>
+              <div className="mt-4">
+                <p className="mb-3 text-sm font-medium text-muted-foreground">
+                  {imageFiles.length} image(s) selected
+                  {imageFiles.length > 0 && ' - First image will be the primary display'}
+                </p>
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                  {imagePreviews.map((preview, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        className="h-32 w-full rounded border object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1 right-1 rounded-full bg-red-600 p-1 text-white opacity-0 transition-opacity hover:bg-red-700 group-hover:opacity-100"
+                        title="Remove image"
+                      >
+                        <svg
+                          className="h-4 w-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                      {index === 0 && (
+                        <span className="absolute bottom-1 left-1 rounded bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">
+                          Primary
+                        </span>
+                      )}
+                      <div className="mt-1 text-center text-xs text-muted-foreground">
+                        {imageFiles[index].name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>
